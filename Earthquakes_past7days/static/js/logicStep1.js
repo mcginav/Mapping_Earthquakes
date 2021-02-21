@@ -42,4 +42,4 @@ d3.json("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_week.geoj
     L.geoJSON(data).addTo(map);
 }); 
 // Pass our map layers into our layers control and add the layers control to the map.
-// L.control.layers(baseMaps).addTo(map);
+L.control.layers(baseMaps).addTo(map);
