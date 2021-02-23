@@ -1,21 +1,26 @@
 // Add console.log to check if code is working.
 console.log("working");
 
-// Accessing the earthquake GeoJSON file
-//let USGSData = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_week.geojson"
-
 // We create the tile layer that will be the background of our map.
 let streets = L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token={accessToken}', {
-    attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
-    maxZoom: 18,
-    accessToken: API_KEY
+	attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery (c) <a href="https://www.mapbox.com/">Mapbox</a>',
+	maxZoom: 18,
+	accessToken: API_KEY
 });
+
 // We create the satellite view tile layer that will be an option for the background of our map.
 let satelliteStreets = L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v11/tiles/{z}/{x}/{y}?access_token={accessToken}', {
-    attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
-    maxZoom: 18,
-    accessToken: API_KEY
+	attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery (c) <a href="https://www.mapbox.com/">Mapbox</a>',
+	maxZoom: 18,
+	accessToken: API_KEY
 });
+
+// Create the map object with center, zoom level and default layer.
+let map = L.map('mapid', {
+  center: [39.5, -98.5],
+  zoom: 3,
+  layers: [streets]
+})
 
 // Create a base layer that holds both maps.
 let baseMaps = {
@@ -28,14 +33,14 @@ let earthquakes = new L.LayerGroup();
 
 // Define an object that contains the overlays which will be visible all the time.
 let overlays = {
-    Earthquakes: earthquakes
+    "Earthquakes" : earthquakes
   };
-// Create the map object with center, zoom level and default layer.
-let map = L.map('mapid', {
-    center: [39.5 -98.5],
-    zoom: 3,
-    layers: [streets]
-})
+
+  // Pass our map layers into our layers control and add the layers control to the map. 
+L.control.layers(baseMaps, overlays).addTo(map);
+
+// Grabbing our GeoJSON data.
+d3.json("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_week.geojson").then(function(data) {
 
 // This function returns the style data for each of the earthquakes we plot on the map. We pass the magnitude of the earthquake into a function
 // to calculate the radius.
@@ -49,14 +54,6 @@ function styleInfo(feature) {
       stroke: true,
       weight: 0.5
     };
-  }
-// This function determines the radius of the earthquake marker based on its magnitude.
-// Earthquakes with a magnitude of 0 will be plotted with a radius of 1.
-function getRadius(magnitude) {
-    if (magnitude === 0) {
-      return 1;
-    }
-    return magnitude * 4;
   }
 
 // This function returns the style data for each of the earthquakes we plot on the map. We pass the magnitude of the earthquake into two separate functions
@@ -93,11 +90,17 @@ function getColor(magnitude) {
     return "#98ee00";
   }  
    
-// Grabbing our GeoJSON data.
-d3.json("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_week.geojson").then(function(data) {
-    // Creating a GeoJSON layer w/retrieved data
-    L.geoJSON(data, {
+// This function determines the radius of the earthquake marker based on its magnitude.
+// Earthquakes with a magnitude of 0 will be plotted with a radius of 1.
+function getRadius(magnitude) {
+  if (magnitude === 0) {
+    return 1;
+  }
+  return magnitude * 4;
+}
 
+// Creating a GeoJSON layer w/retrieved data
+L.geoJSON(data, {
     // We turn each feature into a circleMarker on the map.
     pointToLayer: function(feature, latlng) {
                 console.log(data);
@@ -109,6 +112,8 @@ d3.json("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_week.geoj
       layer.bindPopup("Magnitude: " + feature.properties.mag + "<br>Location: " + feature.properties.place);
     }          
   }).addTo(earthquakes);
+
+  earthquakes.addTo(map);
    
 
 let legend = L.control({
@@ -116,10 +121,10 @@ let legend = L.control({
 });
 
 legend.onAdd = function () {
-
     let div = L.DomUtil.create('div', 'info legend'),
-    const magnitudes = [0, 1, 2, 3, 4, 5];
-    const colors = [
+
+    magnitudes = [0, 1, 2, 3, 4, 5];
+    colors = [
       "#98ee00",
       "#d4ee00",
       "#eecc00",
@@ -127,7 +132,6 @@ legend.onAdd = function () {
       "#ea822c",
       "#ea2c2c"
     ];
-        labels = [];
 
     // loop through our density intervals and generate a label with a colored square for each interval
     for (var i = 0; i < magnitudes.length; i++) {
@@ -136,12 +140,10 @@ legend.onAdd = function () {
             '<i style="background:' + colors[i] + "'></i> " +
             magnitudes[i] + (magnitudes[i + 1] ? '&ndash;' + magnitudes[i + 1] + '<br>' : '+');
     }
-
     return div;
-};
+  };
 
-legend.addTo(map);
+  legend.addTo(map);
 
-// Pass our map layers into our layers control and add the layers control to the map. 
-L.control.layers(baseMaps, overlays).addTo(map);
+
 }); 
